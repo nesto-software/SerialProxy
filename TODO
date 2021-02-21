@@ -1,0 +1,14 @@
+* Make configurable (serial port, speed, flow control etc)
+	Partly done by Cornelius Cook.
+
+* Add option to dump to file and display status on screen.
+
+* Nicer way to terminate program than Ctrl-C/KILLing it.
+
+* Lock serial ports.
+
+* Add filtering rules capability.
+	Perhaps look at some regex libraries?
+
+* PTYs? Pipes? So we can look like a serial port to programs that expect to
+  talk to one.

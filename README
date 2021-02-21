@@ -1,0 +1,132 @@
+sersniff 0.0.5 - A program to tunnel between 2 serial ports and show
+what's happening.
+Copyright 1999-2011 Jonathan McDowell
+http://www.earth.li/projectpurple/progs/sersniff.html
+
+
+Introduction:
+
+This program was written to aid me with the decoding of the protocol
+used by the Nokia 9000i Communicator to talk to the NServer software
+Nokia provides, which only runs under Windows. Having hastily thrown
+together the code to do what I needed it occured to me that others may
+have a use for something similiar and that having a skeleton available
+may help.
+
+(Aside: Of course, in the usual tradition of Open Source, someone got
+there before. Checkout nserver from
+http://users.globalnet.co.uk/~syrinx/ if your interested in the Nokia
+stuff.)
+
+I feel that the concept could be taken a lot further, with various
+filters and so on being constructed (given a framework in which to
+construct them) similiar to that available with ethernet sniffers. This
+could aid with the disassembly of unknown protocols over serial lines or
+even for debugging serial connections. Maybe I'll write this code
+someday, maybe not. Maybe someone else will and will send me a patch. :)
+
+
+Command line options:
+
+sersniff [-h] [-i DEVICE ] [-o DEVICE] [-b BAUD] [-s] [-n] [-w USECS]
+
+-h
+	Displays some command line option help.
+
+-i IN_DEV
+	Set the device to use for Port1. Default of /dev/ttyS0. If you want
+	to listen on a TCP port then use the format :port. If there's a / in
+	the string then it will always be treated as a device rather than a
+	port to listen on.
+
+-o OUT_DEV
+	Set the device to use for Port2. Default of /dev/ttyS1. If you want
+	to connect to a TCP port then use the format host:port. Again if
+	there's a / in the string then it will always be treated as a device.
+
+-b BAUD
+	Specify baud rate for serial connections. Defaults to 19200.
+
+-s
+	Make sersniff not copy data between the two ports - useful if a
+	Y cable is being used for serial port sniffing for example.
+
+-n
+	Don't do any port configuration.
+
+-w USECS
+	How many microsecs to wait before reporting a delay.
+
+-x
+	Show hex characters instead of normal ASCII characters.
+
+-f
+	Specify the format string that should be used to print hex characters.
+
+
+TCP/serial things:
+
+This program was originally written to cope with serial port data. I
+have added simple support for a TCP connection both to aid with
+development (it's a /lot/ easier for me to generate TCP streams than
+serial streams) and also because I think a lot of the things that are
+useful for monitoring a serial port data stream can also be applied to
+TCP. Taking this further leads to thinking about UDP/raw ethernet - I'll
+think about it once I get some filtering stuff in.
+
+The TCP stuff does a simple listen on a port and then connects to the
+host/port specified. I see no reason why it couldn't be used to allow
+telneting to a serial port or connecting from a serial port to a TCP
+port, but I haven't tested this.
+
+
+Filtering:
+
+This is a definite to do. For example, let's assume a regex based
+scheme. We could implement the current filter as something like:
+
+/\x0A/		<LF>
+/\x0D/		<CR>
+/\x1B/		<ESC>
+/./		.
+
+(Yeah, ok, I need to think about syntax. This doesn't cover the < 32 or
+> 127 range)
+
+But then say we learn a bit about our protocol? Let's assume VT100 for a
+moment, then we might want:
+
+/\x0A/		<LF>
+/\x0D/		<CR>
+/\x1B/		<ESC>
+/\x1B[2J/	<Screen Clear>
+/\x1B[0m/	<Attribute Reset>
+/\0x7/		<BEL>
+/./		.
+
+Now that's more useful, isn't it? And if it came with filters for common
+serial protocols, that might be useful too? Say a VT100 one, a PPP one,
+a UUCP one, well, you get the idea hopefully.
+
+Anyway, this is a major to do. Just needs me to get a round tuit and
+think about syntax.
+
+
+Development system:
+
+sersniff was originally written under Linux on a 486dx2-66. It is
+currently being worked on under FreeBSD on a Cyrix P233+.
+
+
+Contacting the author:
+
+I can be reached as noodles@earth.li or on Fidonet as Jonathan McDowell
+@ 2:443/21
+
+All constructive criticism about sersniff is welcome.
+
+
+License:
+
+sersniff is distributed under the GNU Public License, a copy of which
+should have been provided with this archive as LICENSE.

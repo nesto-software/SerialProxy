@@ -1,0 +1,32 @@
+0.0.1 - 10th September 1999
+
+First public release.
+
+0.0.2 - 4th December 1999
+
+* Extra error checking added (Cornelius Cook)
+* Command line options added (Cornelius Cook)
+* Added TCP module.
+* Added silent option.
+* More documentation about filtering.
+
+0.0.3 - 18th April 2000
+
+* Look change and select code added (Cornelius Cook)
+* Some socket tweaks (Cornelius Cook)
+* Started breaking out display code in preparation for ncurses version.
+* Added check for closed sockets.
+
+0.0.4 - 11th October 2000
+
+* Changed -i & -o to cope with either serial ports or TCP ports.
+* Added option to not initialize the serial ports (Glen W. Mabey)
+* Added format option. (Glen W. Mabey)
+* Added port names. (Glen W. Mabey)
+
+0.0.5 - 9th July 2011
+
+* Updated code to compile under OS X (Peter Baker)
+* Added man page (Jeremy Lunn)
+* Add -z option for ignoring EOFs (Peter Baker)
+* Various minor code cleanups.
