@@ -17,7 +17,7 @@ jobs:
 
     - name: Run make
       run: |
-        make
+        /usr/bin/crossbuild make
 
     - name: Upload Artifact - sersniff utility
       uses: actions/upload-artifact@v2
