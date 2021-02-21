@@ -1,0 +1,26 @@
+on:
+  push:
+    branches: master
+    
+jobs:
+  build-and-package:
+    name: Build nesto-serialproxy debian package
+    runs-on: ubuntu-latest
+    container:
+      image: multiarch/crossbuild
+      env:
+        CROSS_TRIPLE: "arm-linux-gnueabihf"
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run make
+      run: |
+        make
+
+    - name: Upload Artifact - sersniff utility
+      uses: actions/upload-artifact@v2
+      with:
+        name: nesto-serialproxy
+        path: |
+          sersniff
