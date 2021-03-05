@@ -38,14 +38,24 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <zmq.hpp>
 
 #include "disp_basic.h"
 #include "tcp.h"
+
+zmq::context_t *ctx = new zmq::context_t();
+zmq::socket_t sock (*ctx, zmq::socket_type::pub);
 
 char * speed_str[] = { "300", "1200", "2400", "4800", "9600", "19200", "38400",
 		"57600", "115200", "230400", NULL };
 speed_t speed_num[] = { B300, B1200, B2400, B4800, B9600, B19200, B38400,
 		B57600, B115200, B230400, B0 };
+
+void send_via_zmq(char payload) {
+
+	std::string str(1, payload);
+	sock.send(zmq::message_t(str), zmq::send_flags::dontwait); 
+}
 
 int openport(const char *device, speed_t baud, int setup)
 {
@@ -87,15 +97,15 @@ int closeport(int filedes)
 }
 
 /*
-   this returns the string for the character passed to it
-   It could be expanded in the future to maybe to string recognitions?
+this returns the string for the character passed to it
+It could be expanded in the future to maybe to string recognitions?
 */
 char *chardecide(unsigned char c, int alpha, char *format) {
 	static char result[256];
 
 	/* everyone should take up 5 characters */
 	if (alpha) {
-  	   if ((c < 32) | (c > 126)) {
+	if ((c < 32) | (c > 126)) {
 		switch (c) {
 			case 10:
 				sprintf(result,"<LF>");
@@ -110,11 +120,11 @@ char *chardecide(unsigned char c, int alpha, char *format) {
 				snprintf(result,256,"<%02hX>",c);
 				break;
 		}
-	   } else {
-		snprintf(result,256,"%c",c);
-	   }
 	} else {
-	   snprintf(result,256,format,c);
+		snprintf(result,256,"%c",c);
+	}
+	} else {
+	snprintf(result,256,format,c);
 	}
 	return result;
 }
@@ -124,8 +134,12 @@ void outputchar(unsigned char c, int port, int alpha,
 {
 	char *todisplay;
 
-	todisplay=chardecide(c,alpha,format);
-	disp_outputstr(port, todisplay, usec_threshold, usec_waited, name1, name2);
+	// TODO: use switch to choose between IPC and console output
+	// TODO: buffer before sending data via zmq
+	send_via_zmq(c);
+	
+	//todisplay=chardecide(c,alpha,format);
+	//disp_outputstr(port, todisplay, usec_threshold, usec_waited, name1, name2);
 }
 
 void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long usec_threshold, char *name1, char *name2, char *format)
@@ -140,6 +154,9 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 	struct timeval after;
 	long timediff;
 	int quit=0;
+
+	// create a zmq socket for IPC
+	sock.bind("tcp://127.0.0.1:5678");
 
 	/* need the largest fd for the select call */
 	biggestfd=port1 > port2 ? port1 : port2;
@@ -176,7 +193,7 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 		
 		if (FD_ISSET(port1, &rfds)) {
 			for (rc=read(port1, &c1, 1);
-			     rc>0; rc=read(port1, &c1, 1) ) {
+				rc>0; rc=read(port1, &c1, 1) ) {
 				outputchar(c1,1,alpha,usec_threshold,timediff,name1,name2,format);
 				timediff=0;
 				if (!silent) write(port2,&c1,1);
@@ -193,7 +210,7 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 		
 		if (FD_ISSET(port2, &rfds)) {
 			for (rc=read(port2, &c2, 1);
-			     rc>0; rc=read(port2, &c2, 1) ) {
+				rc>0; rc=read(port2, &c2, 1) ) {
 				outputchar(c2,2,alpha,usec_threshold,timediff,name1,name2,format);
 				timediff=0;
 				if (!silent) write(port1,&c2,1);
@@ -211,13 +228,13 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 		/* check for exceptions (sockets closed, broken, etc) */
 		if (FD_ISSET(port1, &efds)) {
 			/* I can't remember right now what to actually
-			   check for on a fd exception, so we'll just quit */
+			check for on a fd exception, so we'll just quit */
 			fprintf(stderr,"\nException on port1\n");
 			quit=1;
 		}
 		if (FD_ISSET(port2, &efds)) {
 			/* I can't remember right now what to actually
-			   check for on a fd exception, so we'll just quit */
+			check for on a fd exception, so we'll just quit */
 			fprintf(stderr,"\nException on port2\n");
 			quit=1;
 		}
@@ -284,7 +301,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			if ((tmpchr=strchr(optarg, ':'))!=NULL &&
-                            (strchr(optarg, '/')==NULL)) {
+							(strchr(optarg, '/')==NULL)) {
 				*tmpchr='\0';
 				listenport=atoi(++tmpchr);
 			} else {
@@ -293,7 +310,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'o':
 			if ((tmpchr=strchr(optarg, ':'))!=NULL &&
-                            (strchr(optarg, '/')==NULL)) {
+							(strchr(optarg, '/')==NULL)) {
 				*tmpchr='\0';
 				connectport=atoi(++tmpchr);
 				connecthost=strdup(optarg);
@@ -306,8 +323,8 @@ int main(int argc, char *argv[])
 			break;
 		case 'b':
 			for (speed=0;
-			     speed_str[speed];
-			     speed++) {
+				speed_str[speed];
+				speed++) {
 				if (strstr(optarg,speed_str[speed])==optarg) {
 					baud=speed_num[speed];
 					break;
