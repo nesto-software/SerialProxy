@@ -132,10 +132,11 @@ char *chardecide(unsigned char c, int alpha, char *format) {
 void outputchar(unsigned char c, int port, int alpha,
 		long usec_threshold, long usec_waited, char *name1, char *name2, char *format)
 {
-	char *todisplay;
+	//char *todisplay;
 
 	// TODO: use switch to choose between IPC and console output
 	// TODO: buffer before sending data via zmq
+	// TODO: add support for CRTSCTS, see: termios.h
 	send_via_zmq(c);
 	
 	//todisplay=chardecide(c,alpha,format);
@@ -355,10 +356,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* Default settings */
-	if (!dev1 && !listenport) dev1=strdup("/dev/ttyS0");
-	if (!name1 && !listenport) name1=strdup("Port1");
-	if (!dev2 && !connecthost) dev2=strdup("/dev/ttyS1");
-	if (!name2 && !connecthost) name2=strdup("Port2");
+	//if (!dev1 && !listenport) dev1=strdup("/dev/ttyS0");
+	//if (!name1 && !listenport) name1=strdup("Port1");
+	//if (!dev2 && !connecthost) dev2=strdup("/dev/ttyS1");
+	//if (!name2 && !connecthost) name2=strdup("Port2");
 	if (baud==B0) baud=B19200;
 	if (!format) format=strdup("0x%02hX");
 
@@ -372,7 +373,7 @@ int main(int argc, char *argv[])
 
 	if (dev2) {
 		port2=openport(dev2, baud, setup_port);
-	} else {
+	} else if (connecthost) {
 		disp_outputstatus("Connecting to TCP port.");
 		port2=opensock(connecthost, connectport);
 	}
