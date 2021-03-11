@@ -4,15 +4,14 @@
 CPPFLAGS += -g
 #CFLAGS += -Wall -I/usr/local/include/ # uncomment to build locally
 CFLAGS += -Wall
-LINK = gcc
-LINKFLAGS = -g -o
+LINKFLAGS += -g -o
 LDLIBS = -lzmq -lstdc++
 CXXFLAGS =
 
 all : sersniff
 
 sersniff: sersniff.o tcp.o disp_basic.o
-	$(LINK) $(CXXFLAGS) $(LINKFLAGS) sersniff sersniff.o tcp.o disp_basic.o $(LDLIBS)
+        $(CXX) $(CXXFLAGS) $(LINKFLAGS) sersniff sersniff.o tcp.o disp_basic.o $(LDLIBS)
 
 clean :
-	rm -f *~ core *.o a.out sersniff
+        rm -f *~ core *.o a.out sersniff
