@@ -14,5 +14,5 @@ curl -s https://api.github.com/repos/nesto-software/crosstool-NG/releases/latest
     | tr -d \" \
     | wget -qi - -O "$DOWNLOAD_LOCATION"
 
-echo "Extract archive using tar"
+echo "Extract archive using tar..."
 sudo tar xfv "$DOWNLOAD_LOCATION" -C /opt/crosstool-ng/x-tools/

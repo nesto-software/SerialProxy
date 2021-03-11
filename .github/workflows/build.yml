@@ -34,6 +34,7 @@ jobs:
     - name: Build libzmq
       working-directory: /tmp/libzmq
       run: |
+        which ${TOOLCHAIN}-ranlib
         ./autogen.sh
         CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ AR=${TOOLCHAIN}-ar STRIP=${TOOLCHAIN}-strip RANLIB=${TOOLCHAIN}-ranlib ./configure --host=arm-unknown-linux-gnueabi --exec-prefix=$STAGING_DIR/usr/local --prefix=${STAGING_DIR}/usr/local --disable-curve-keygen 
         make
@@ -41,7 +42,7 @@ jobs:
 
     - name: Run make
       run: |
-        make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
+        CFLAGS=-I/usr/local/include/ make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
 
     - name: Upload Artifact - sersniff utility
       uses: actions/upload-artifact@v2

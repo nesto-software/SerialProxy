@@ -3,7 +3,8 @@
 
 CC = gcc
 CPPFLAGS += -g
-CFLAGS += -Wall -I/usr/local/include/
+#CFLAGS += -Wall -I/usr/local/include/ # uncomment to build locally
+CFLAGS += -Wall
 LINK = gcc
 LINKFLAGS = -g -o
 LDLIBS = -lzmq -lstdc++
