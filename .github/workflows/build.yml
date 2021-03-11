@@ -12,7 +12,7 @@ jobs:
       STAGING_DIR: /usr/raspberry-build/staging
 
     steps:
-    - run: /opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin >> $GITHUB_PATH
+    - run: echo /opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin >> $GITHUB_PATH
     - uses: actions/checkout@v2
 
     - name: Install cross-toolchain
