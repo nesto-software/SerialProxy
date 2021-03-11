@@ -39,9 +39,27 @@ jobs:
         make
         sudo PATH=$PATH:/opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin make install
 
+    - name: Download cppzmq
+      run: |
+        git clone https://github.com/zeromq/cppzmq.git /tmp/cppzmq && cd /tmp/cppzmq && git checkout c591113bb7975e1be6fa6b0c758cacfe0411c66e
+
+    - name: Install cmake v3.19.4
+      run: |
+        wget https://github.com/Kitware/CMake/releases/download/v3.19.4/cmake-3.19.4-Linux-x86_64.sh -P /tmp/
+        chmod +x /tmp/cmake-3.19.4-Linux-x86_64.sh && mkdir /tmp/cmake && /tmp/cmake-3.19.4-Linux-x86_64.sh --skip-license --prefix=/tmp/cmake
+
+    - name: Build cppzmq
+      working-directory: /tmp/cppzmq
+      run: |
+        mkdir build
+        cd ./build
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig /tmp/cmake/bin/cmake .. "-DCMAKE_TOOLCHAIN_FILE=$HOME/config/crossbuild.cmake.tc" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ make
+        DESTDIR=${STAGING_DIR} make -j4 install
+
     - name: Run make
       run: |
-        CFLAGS=-I/usr/local/include/ make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
+        CFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/lib" make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
 
     - name: Upload Artifact - sersniff utility
       uses: actions/upload-artifact@v2
