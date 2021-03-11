@@ -53,7 +53,7 @@ jobs:
       run: |
         mkdir build
         cd ./build
-        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig /tmp/cmake/bin/cmake .. "-DCMAKE_TOOLCHAIN_FILE=$HOME/config/crossbuild.cmake.tc" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig /tmp/cmake/bin/cmake .. "-DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/config/crossbuild.cmake.tc" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
         CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ make
         DESTDIR=${STAGING_DIR} make -j4 install
 
