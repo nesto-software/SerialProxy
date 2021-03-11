@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TOOLCHAIN: arm-unknown-linux-gnueabi
+      STAGING_DIR: /usr/raspberry-build/staging
 
     steps:
     - run: /opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin >> $GITHUB_PATH
@@ -17,6 +18,26 @@ jobs:
     - name: Install cross-toolchain
       run: |
         ./scripts/install-cross-toolchain-armhf.sh
+
+    - name: Prepare staging directory
+      run: |
+        mkdir -p "${STAGING_DIR}"
+
+    - name: Install prerequisites for libzmq build
+      run: |
+        apt-get install -y pkg-config
+
+    - name: Download libzmq
+      run: |
+        git clone https://github.com/zeromq/libzmq.git /tmp/libzmq && cd /tmp/libzmq && git checkout 92282785ed8e3a954d379a0ac0e784dc29d94746
+ 
+    - name: Build libzmq
+      working-directory: /tmp/libzmq
+      run: |
+        ./autogen.sh
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ AR=${TOOLCHAIN}-ar STRIP=${TOOLCHAIN}-strip RANLIB=${TOOLCHAIN}-ranlib ./configure --host=arm-unknown-linux-gnueabi --exec-prefix=$STAGING_DIR/usr/local --prefix=${STAGING_DIR}/usr/local --disable-curve-keygen 
+        make
+        make install
 
     - name: Run make
       run: |
