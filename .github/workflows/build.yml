@@ -17,15 +17,15 @@ jobs:
 
     - name: Install cross-toolchain
       run: |
-        ./scripts/install-cross-toolchain-armhf.sh
+        sudo ./scripts/install-cross-toolchain-armhf.sh
 
     - name: Prepare staging directory
       run: |
-        mkdir -p "${STAGING_DIR}"
+        sudo mkdir -p "${STAGING_DIR}"
 
     - name: Install prerequisites for libzmq build
       run: |
-        apt-get install -y pkg-config
+        sudo apt-get install -y pkg-config
 
     - name: Download libzmq
       run: |
@@ -37,7 +37,7 @@ jobs:
         ./autogen.sh
         CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ AR=${TOOLCHAIN}-ar STRIP=${TOOLCHAIN}-strip RANLIB=${TOOLCHAIN}-ranlib ./configure --host=arm-unknown-linux-gnueabi --exec-prefix=$STAGING_DIR/usr/local --prefix=${STAGING_DIR}/usr/local --disable-curve-keygen 
         make
-        make install
+        sudo make install
 
     - name: Run make
       run: |
