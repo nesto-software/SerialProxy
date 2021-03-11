@@ -14,4 +14,4 @@ curl -s https://api.github.com/repos/nesto-software/crosstool-NG/releases/latest
 | tr -d \" \
 | wget -qi - -O "$FILE"
 
-tar xfv /tmp/crosstool-ng-armhf.tar.xz -C /opt/crosstool-ng/x-tools/
+sudo tar xfv /tmp/crosstool-ng-armhf.tar.xz -C /opt/crosstool-ng/x-tools/
