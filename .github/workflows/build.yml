@@ -59,7 +59,7 @@ jobs:
 
     - name: Run make
       run: |
-        CFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/lib" make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
+        CPPFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/lib" make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
 
     - name: Upload Artifact - sersniff utility
       uses: actions/upload-artifact@v2

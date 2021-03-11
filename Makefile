@@ -1,7 +1,6 @@
 # Makefile for sersniff
 # Copyright 1999 Jonathan McDowell for Project Purple
 
-CC = gcc
 CPPFLAGS += -g
 #CFLAGS += -Wall -I/usr/local/include/ # uncomment to build locally
 CFLAGS += -Wall
