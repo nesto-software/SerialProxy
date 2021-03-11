@@ -7,17 +7,20 @@ jobs:
   build-and-package:
     name: Build nesto-serialproxy debian package
     runs-on: ubuntu-latest
-    container:
-      image: multiarch/crossbuild
-      env:
-        CROSS_TRIPLE: "arm-linux-gnueabihf"
-    
+    env:
+      TOOLCHAIN: arm-unknown-linux-gnueabi
+
     steps:
+    - run: /opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin >> $GITHUB_PATH
     - uses: actions/checkout@v2
+
+    - name: Install cross-toolchain
+      run: |
+        ./scripts/install-cross-toolchain-armhf.sh
 
     - name: Run make
       run: |
-        /usr/bin/crossbuild make
+        make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
 
     - name: Upload Artifact - sersniff utility
       uses: actions/upload-artifact@v2
