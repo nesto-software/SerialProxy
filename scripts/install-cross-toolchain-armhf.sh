@@ -9,10 +9,10 @@ sudo mkdir -p /opt/crosstool-ng/x-tools/
 
 echo "Downloading crosstool-ng toolchain for armhf..."
 curl -s https://api.github.com/repos/nesto-software/crosstool-NG/releases/latest \
-| grep "/crosstool-ng-armhf.tar.xz" \
-| cut -d : -f 2,3 \
-| tr -d \" \
-| wget -qi - -O "$DOWNLOAD_LOCATION"
+    | grep "/crosstool-ng-armhf.tar.xz" \
+    | cut -d : -f 2,3 \
+    | tr -d \" \
+    | wget -qi - -O "$DOWNLOAD_LOCATION"
 
 echo "Extract archive using tar"
-sudo tar -xfv "$DOWNLOAD_LOCATION" -C /opt/crosstool-ng/x-tools/
+sudo tar xfv "$DOWNLOAD_LOCATION" -C /opt/crosstool-ng/x-tools/
