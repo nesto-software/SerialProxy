@@ -39,6 +39,9 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <zmq.hpp>
+#include <sys/ioctl.h>
+#include <thread>
+#include <atomic>
 
 #include "disp_basic.h"
 #include "tcp.h"
@@ -50,6 +53,67 @@ char * speed_str[] = { "300", "1200", "2400", "4800", "9600", "19200", "38400",
 		"57600", "115200", "230400", NULL };
 speed_t speed_num[] = { B300, B1200, B2400, B4800, B9600, B19200, B38400,
 		B57600, B115200, B230400, B0 };
+
+int setRTS(int fd, int level) {
+    int status;
+
+    if (ioctl(fd, TIOCMGET, &status) == -1) {
+        perror("setRTS(): TIOCMGET");
+        return 0;
+    }
+    if (level)
+        status |= TIOCM_RTS;
+    else
+        status &= ~TIOCM_RTS;
+    if (ioctl(fd, TIOCMSET, &status) == -1) {
+        perror("setRTS(): TIOCMSET");
+        return 0;
+    }
+    return 1;
+}
+
+int setDTR(int fd, int level) {
+    int status;
+
+    if (ioctl(fd, TIOCMGET, &status) == -1) {
+        perror("setDTR(): TIOCMGET");
+        return 0;
+    }
+    if (level)
+        status |= TIOCM_DTR;
+    else
+        status &= ~TIOCM_DTR;
+    if (ioctl(fd, TIOCMSET, &status) == -1) {
+        perror("setDTR(): TIOCMSET");
+        return 0;
+    }
+    return 1;
+}
+
+int getRTS(int fd) {
+    int status;
+
+    if (ioctl(fd, TIOCMGET, &status) == -1) {
+        perror("setRTS(): TIOCMGET");
+        return 0;
+    }
+    
+	return (status & TIOCM_CTS) != 0;
+}
+
+void handle_flow_control(int port1, int port2, std::atomic<bool>& stop_flag) {
+
+	while (!stop_flag.load()) {
+		int status = getRTS(port1);
+		setRTS(port2, status);
+		setDTR(port2, status);
+
+		//printf("status: %d\n", status);
+		//fflush(NULL);
+
+		usleep(1000000);
+	}
+}
 
 void send_via_zmq(char payload) {
 
@@ -105,45 +169,46 @@ char *chardecide(unsigned char c, int alpha, char *format) {
 
 	/* everyone should take up 5 characters */
 	if (alpha) {
-	if ((c < 32) | (c > 126)) {
-		switch (c) {
-			case 10:
-				sprintf(result,"<LF>");
-				break;
-			case 13:
-				sprintf(result,"<CR>");
-				break;
-			case 27:
-				sprintf(result,"<ESC>");
-				break;
-			default:
-				snprintf(result,256,"<%02hX>",c);
-				break;
+		if ((c < 32) | (c > 126)) {
+			switch (c) {
+				case 10:
+					sprintf(result,"<LF>");
+					break;
+				case 13:
+					sprintf(result,"<CR>");
+					break;
+				case 27:
+					sprintf(result,"<ESC>");
+					break;
+				default:
+					snprintf(result,256,"<%02hX>",c);
+					break;
+			}
+		} else {
+			snprintf(result,256,"%c",c);
 		}
 	} else {
-		snprintf(result,256,"%c",c);
+		snprintf(result,256,format,c);
 	}
-	} else {
-	snprintf(result,256,format,c);
-	}
+
 	return result;
 }
 
 void outputchar(unsigned char c, int port, int alpha,
-		long usec_threshold, long usec_waited, char *name1, char *name2, char *format)
+		long usec_threshold, long usec_waited, char *name1, char *name2, char *format, bool logToConsole)
 {
-	//char *todisplay;
-
-	// TODO: use switch to choose between IPC and console output
 	// TODO: buffer before sending data via zmq
 	// TODO: add support for CRTSCTS, see: termios.h
 	send_via_zmq(c);
 	
-	//todisplay=chardecide(c,alpha,format);
-	//disp_outputstr(port, todisplay, usec_threshold, usec_waited, name1, name2);
+	if (logToConsole) {
+		char *todisplay;
+		todisplay=chardecide(c,alpha,format);
+		disp_outputstr(port, todisplay, usec_threshold, usec_waited, name1, name2);
+	}
 }
 
-void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long usec_threshold, char *name1, char *name2, char *format)
+void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long usec_threshold, char *name1, char *name2, char *format, bool logToConsole)
 {
 	unsigned char c1, c2;
 	int rc;
@@ -162,6 +227,9 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 	/* need the largest fd for the select call */
 	biggestfd=port1 > port2 ? port1 : port2;
 	biggestfd++;
+
+	std::atomic<bool> stop_flag(false);
+	std::thread flow_control_thread(handle_flow_control, port1, port2, std::ref(stop_flag));
 
 	while (!quit) {
 		/* reset the select set */
@@ -195,7 +263,7 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 		if (FD_ISSET(port1, &rfds)) {
 			for (rc=read(port1, &c1, 1);
 				rc>0; rc=read(port1, &c1, 1) ) {
-				outputchar(c1,1,alpha,usec_threshold,timediff,name1,name2,format);
+				outputchar(c1,1,alpha,usec_threshold,timediff,name1,name2,format,logToConsole);
 				timediff=0;
 				if (!silent) write(port2,&c1,1);
 			}
@@ -212,7 +280,7 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 		if (FD_ISSET(port2, &rfds)) {
 			for (rc=read(port2, &c2, 1);
 				rc>0; rc=read(port2, &c2, 1) ) {
-				outputchar(c2,2,alpha,usec_threshold,timediff,name1,name2,format);
+				outputchar(c2,2,alpha,usec_threshold,timediff,name1,name2,format,logToConsole);
 				timediff=0;
 				if (!silent) write(port1,&c2,1);
 			}	
@@ -241,6 +309,8 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 		}
 	}
 
+	stop_flag = true;
+	flow_control_thread.join();
 	closeport(port2);
 	closeport(port1);
 }
@@ -261,6 +331,7 @@ void usage()
 "-o DEVICE	Port 2 device (defaults to /dev/ttyS1). Use :port for TCP.\n"
 "-2 PORT2_NAME	Port 2 name to be printed (defaults to 'Port2')\n"
 "-b BAUD		Baud rate (Defaults to 19200)\n"
+"-a      		Log the incoming traffic to console\n"
 "-n 		No port configuration (do not set BAUD or change settings)\n"
 "-w USECS	How many microsecs to wait before reporting a delay\n"
 "			(default is %d)\n"
@@ -289,11 +360,15 @@ int main(int argc, char *argv[])
 	int setup_port=1;
 	int quit_on_eof=1;
 	char *format=NULL;
+	bool logToConsole = false;
 
-	while ((optret=getopt(argc,argv,"hxsnzi:l:o:c:b:w:1:2:f:"))!=EOF) {
+	while ((optret=getopt(argc,argv,"ahxsnzi:l:o:c:b:w:1:2:f:"))!=EOF) {
 		switch (optret) {
 		case '?': case 'h': case ':':
 			usage();
+		case 'a':
+			logToConsole = true;
+			break;
 		case 's':
 			silent=1;
 			break;
@@ -383,7 +458,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	mainloop(port1, port2, silent, show_alpha, quit_on_eof, usec_threshold, name1, name2, format);
+	mainloop(port1, port2, silent, show_alpha, quit_on_eof, usec_threshold, name1, name2, format, logToConsole);
 
 	/* Clean up */
 	if (dev1) free(dev1);

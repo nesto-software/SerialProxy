@@ -5,7 +5,7 @@ CPPFLAGS += -g
 #CFLAGS += -Wall -I/usr/local/include/ # uncomment to build locally
 CFLAGS += -Wall
 LINKFLAGS += -g -o
-LDLIBS = -lzmq -lstdc++
+LDLIBS = -lzmq -lstdc++ -pthread
 CXXFLAGS =
 
 all : sersniff
