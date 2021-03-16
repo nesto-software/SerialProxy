@@ -42,9 +42,11 @@
 #include <sys/ioctl.h>
 #include <thread>
 #include <atomic>
+#include <exception>
 
 #include "disp_basic.h"
 #include "tcp.h"
+using namespace std;
 
 zmq::context_t *ctx = new zmq::context_t();
 zmq::socket_t sock (*ctx, zmq::socket_type::pub);
@@ -53,6 +55,29 @@ char * speed_str[] = { "300", "1200", "2400", "4800", "9600", "19200", "38400",
 		"57600", "115200", "230400", NULL };
 speed_t speed_num[] = { B300, B1200, B2400, B4800, B9600, B19200, B38400,
 		B57600, B115200, B230400, B0 };
+
+class ProxyException: public exception {
+	std::string m_msg;
+	private:
+		bool isInputPort;
+	public:
+		ProxyException(const bool isInputPort)
+			: m_msg(std::string("Port ") + ((isInputPort) ? "1" : "2") + " was probably closed.")
+		{
+			this->isInputPort = isInputPort;
+		}
+
+		virtual const char* what() const throw()
+		{
+			return m_msg.c_str();
+		}
+
+	public:
+		bool const checkIfInputPortMisbehaving() {
+			return this->isInputPort;
+		}
+};
+
 
 int setRTS(int fd, int level) {
     int status;
@@ -77,16 +102,23 @@ int setDTR(int fd, int level) {
 
     if (ioctl(fd, TIOCMGET, &status) == -1) {
         perror("setDTR(): TIOCMGET");
-        return 0;
+
+        throw ProxyException(0);
     }
-    if (level)
+
+    if (level) {
         status |= TIOCM_DTR;
-    else
+	}
+    else {
         status &= ~TIOCM_DTR;
+	}
+
     if (ioctl(fd, TIOCMSET, &status) == -1) {
         perror("setDTR(): TIOCMSET");
-        return 0;
+        
+		throw ProxyException(0);
     }
+	
     return 1;
 }
 
@@ -95,7 +127,8 @@ int getRTS(int fd) {
 
     if (ioctl(fd, TIOCMGET, &status) == -1) {
         perror("setRTS(): TIOCMGET");
-        return 0;
+
+        throw ProxyException(1);
     }
     
 	return (status & TIOCM_CTS) != 0;
@@ -104,14 +137,31 @@ int getRTS(int fd) {
 void handle_flow_control(int port1, int port2, std::atomic<bool>& stop_flag) {
 
 	while (!stop_flag.load()) {
-		int status = getRTS(port1);
-		setRTS(port2, status);
-		setDTR(port2, status);
+		try {
+			int rts = getRTS(port1);
+			setRTS(port2, rts);
+			setDTR(port2, rts);
 
-		//printf("status: %d\n", status);
-		//fflush(NULL);
+			// uncomment the following to see rts status on console
+			//printf("status: %d\n", status);
+			//fflush(NULL);
+		} catch (ProxyException &e) {
+			fprintf(stderr, "Exception: %s\n", e.what());
+			fprintf(stderr, "We sleep for 2s and then exit the application.\n");
 
-		usleep(1000000);
+			if (e.checkIfInputPortMisbehaving()) {
+				try {
+					setRTS(port2, 0);
+					setDTR(port2, 0);
+				} catch(exception& e) {};
+			}
+
+			sleep(2);
+			::exit(1);
+		}
+
+		// wait one second
+		sleep(1);
 	}
 }
 
@@ -130,7 +180,10 @@ int openport(const char *device, speed_t baud, int setup)
 		/* Can't open device */
 		fprintf(stderr,"%s: ",device);
 		perror(device);
-		exit(1);
+		fprintf(stderr, "We wait 2s before exiting.\n");
+		sleep(2);
+
+		::exit(1);
 	}
 
 	if (setup) {
@@ -142,12 +195,12 @@ int openport(const char *device, speed_t baud, int setup)
 		if (tcflush(filedes, TCIFLUSH)) {
 			fprintf(stderr,"%s: ",device);
 			perror("tcflush");
-			exit(1);
+			::exit(1);
 		}
 		if (tcsetattr(filedes, TCSANOW, &serparams)) {
 			fprintf(stderr,"%s: ",device);
 			perror("tcsetattr");
-			exit(1);
+			::exit(1);
 		}
 	}
 
@@ -242,15 +295,15 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 
 		if (gettimeofday(&before,NULL)) {
 			perror("gettimeofday");
-			exit(1);
+			::exit(1);
 		}
 		if ((fdret=select(biggestfd, &rfds, NULL, &efds, NULL))<0) {
 			perror("select");
-			exit(1);
+			::exit(1);
 		}
 		if (gettimeofday(&after,NULL)) {
 			perror("gettimeofday");
-			exit(1);
+			::exit(1);
 		}
 
 		/* get seconds difference */
@@ -273,7 +326,7 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 			}
 			if (rc<0 && errno!=EAGAIN) {
 				perror("read(port1)");
-				exit(1);
+				::exit(1);
 			}
 		}
 		
@@ -290,7 +343,7 @@ void mainloop(int port1, int port2, int silent, int alpha, int quit_on_eof, long
 			}
 			if (rc<0 && errno!=EAGAIN) {
 				perror("read(port2)");
-				exit(1);
+				::exit(1);
 			}
 		}
 
@@ -339,7 +392,7 @@ void usage()
 "			just display what we see from them.\n"
 "-z		Don't quit when an EOF character is received.\n"
 ,VERSION,USEC);
-	exit(1);
+	::exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -409,7 +462,7 @@ int main(int argc, char *argv[])
 			if (baud==B0) {
 				fprintf(stderr,"Unsupported Baud: '%s'\n",
 					optarg);
-				exit(1);
+				::exit(1);
 			}
 			break;
 		case 'n':
@@ -455,7 +508,7 @@ int main(int argc, char *argv[])
 
 	if (port1 < 0 || port2 < 0) {
 		fprintf(stderr,"Argh.  An open failed!\n");
-		exit(1);
+		::exit(1);
 	}
 
 	mainloop(port1, port2, silent, show_alpha, quit_on_eof, usec_threshold, name1, name2, format, logToConsole);
