@@ -1,6 +1,7 @@
 # minimal CMakeLists.txt for the AWS Greengrass SDK for C
 cmake_minimum_required(VERSION 2.8)
 set(TOOL serialproxy-gg)
+set(CMAKE_CPP_FLAGS "$ENV{CPPFLAGS} -pthread -Wall")
 LIST(APPEND TOOLS_LINK_LIBS -lzmq -lstdc++ -pthread aws-greengrass-core-sdk-c)
 
 find_package(aws-greengrass-core-sdk-c REQUIRED)

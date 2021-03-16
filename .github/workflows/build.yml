@@ -70,7 +70,7 @@ jobs:
       run: |
         mkdir -p greengrass/build
         cd greengrass/build
-        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ CFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/local/lib" cmake ..
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ CPPFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/local/lib" cmake ..
         make
 
     - name: Upload Artifact - sersniff utility
