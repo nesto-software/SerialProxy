@@ -70,7 +70,7 @@ jobs:
       run: |
         mkdir -p greengrass/build
         cd greengrass/build
-        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ CPPFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/local/lib" cmake ..
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ LDFLAGS="-L$STAGING_DIR/usr/local/lib" /tmp/cmake/bin/cmake "-DCMAKE_CXX_FLAGS=-I$STAGING_DIR/usr/local/include/" ..
         make
 
     - name: Upload Artifact - sersniff utility
@@ -78,5 +78,16 @@ jobs:
       with:
         name: nesto-serialproxy
         path: |
+          sersniff
+          greengrass/build/serialproxy-gg
+
+    - name: Release via gh releases with latest tag
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        automatic_release_tag: latest
+        prerelease: false
+        title: SerialProxy - Latest Binary Release
+        files: |
           sersniff
           greengrass/build/serialproxy-gg
