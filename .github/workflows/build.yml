@@ -62,9 +62,16 @@ jobs:
         git clone https://github.com/aws/aws-greengrass-core-sdk-c.git /tmp/aws-sdk
         cd /tmp/aws-sdk/aws-greengrass-core-sdk-c && git checkout a71613711438b48588e177f86ab322dd3992e780 && mkdir -p build && cd build && cmake .. && cmake --build . && sudo make install
 
-    - name: Run make
+    - name: Build the cli utility
       run: |
         CPPFLAGS=-I$STAGING_DIR/usr/local/include/ LINKFLAGS="-L$STAGING_DIR/usr/local/lib" make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
+
+    - name: Build the greengrass package
+      run: |
+        mkdir -p greengrass/build
+        cd greengrass/build
+        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ CFLAGS=-I$STAGING_DIR/usr/local/include/ LDFLAGS="-L$STAGING_DIR/usr/local/lib" cmake ..
+        make
 
     - name: Upload Artifact - sersniff utility
       uses: actions/upload-artifact@v2
@@ -72,3 +79,4 @@ jobs:
         name: nesto-serialproxy
         path: |
           sersniff
+          greengrass/build/serialproxy-gg
