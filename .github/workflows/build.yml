@@ -57,6 +57,11 @@ jobs:
         CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ make
         sudo PATH=$PATH:/opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin DESTDIR=${STAGING_DIR} make -j4 install
 
+    - name: Install aws-greengrass-core-sdk-c
+      run: |
+        git clone https://github.com/aws/aws-greengrass-core-sdk-c.git /tmp/aws-sdk
+        cd /tmp/aws-sdk/aws-greengrass-core-sdk-c && git checkout a71613711438b48588e177f86ab322dd3992e780 && mkdir -p build && cd build && cmake .. && cmake --build . && sudo make install
+
     - name: Run make
       run: |
         CPPFLAGS=-I$STAGING_DIR/usr/local/include/ LINKFLAGS="-L$STAGING_DIR/usr/local/lib" make CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++
