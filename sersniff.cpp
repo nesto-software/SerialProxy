@@ -66,7 +66,7 @@ class ProxyException: public exception {
 		}
 
 	public:
-		bool const checkIfInputPortMisbehaving() {
+		bool checkIfInputPortMisbehaving() {
 			return this->isInputPort;
 		}
 };

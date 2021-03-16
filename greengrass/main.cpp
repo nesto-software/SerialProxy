@@ -30,7 +30,7 @@ int main() {
 
     gg_runtime_start(handler, GG_RT_OPT_ASYNC);
 
-    // read config from environment
+
     const char* baudRate = std::getenv("BAUD_RATE");
 	char* dev1 = std::getenv("DEV_1");
 	char* dev2 = std::getenv("DEV_2");
@@ -50,14 +50,14 @@ int main() {
 	for (speed=0;
 		speed_str[speed];
 		speed++) {
-		if (strstr(baudRate,speed_str[speed])==optarg) {
+		if (strstr(baudRate,speed_str[speed])==baudRate) {
 			baud=speed_num[speed];
 			break;
 		}
 	}
 	if (baud==B0) {
 		fprintf(stderr,"Unsupported Baud: '%s'\n",
-			optarg);
+			baudRate);
 		::exit(1);
 	}
 	if (baud==B0) baud=B19200;
