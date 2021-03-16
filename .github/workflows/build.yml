@@ -60,7 +60,7 @@ jobs:
     - name: Install aws-greengrass-core-sdk-c
       run: |
         git clone https://github.com/aws/aws-greengrass-core-sdk-c.git /tmp/aws-sdk
-        cd /tmp/aws-sdk/aws-greengrass-core-sdk-c && git checkout a71613711438b48588e177f86ab322dd3992e780 && mkdir -p build && cd build && cmake .. && cmake --build . && sudo make install
+        cd /tmp/aws-sdk/aws-greengrass-core-sdk-c && git checkout a71613711438b48588e177f86ab322dd3992e780 && mkdir -p build && cd build && CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ cmake .. && cmake --build . && sudo make install
 
     - name: Build the cli utility
       run: |
