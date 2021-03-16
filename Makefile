@@ -10,8 +10,8 @@ CXXFLAGS =
 
 all : sersniff
 
-sersniff: sersniff.o tcp.o disp_basic.o
-	$(CXX) $(CXXFLAGS) $(LINKFLAGS) sersniff sersniff.o tcp.o disp_basic.o $(LDLIBS)
+sersniff: main.o sersniff.o tcp.o disp_basic.o
+	$(CXX) $(CXXFLAGS) $(LINKFLAGS) main main.o sersniff.o tcp.o disp_basic.o $(LDLIBS) -o sersniff
 
 clean :
 	rm -f *~ core *.o a.out sersniff

@@ -53,7 +53,7 @@ void disp_outputstatus(char *string)
 
 /* Output a string from the port. */
 void disp_outputstr(int port, char *string,
-		long usec_threshold, long usec_waited, char *name1, char *name2)
+		long usec_threshold, long usec_waited)
 {
 	if (usec_waited>usec_threshold) {
 		/* report how long we waited between the last port */
@@ -68,10 +68,6 @@ void disp_outputstr(int port, char *string,
 		/* If we didn't just send a CR, we need to now */
 		if (wrap!=WRAPINIT) printf("\n");
 		//printf("\nPort%d:\t", port);
-		if (port == 1)
-			printf("\n%s:\t",name1);
-		else
-			printf("\n%s:\t",name2);
 		last=port;
 		wrap=WRAPINIT;
 	} else if (wrap==WRAPINIT) {

@@ -37,5 +37,5 @@ void disp_outputstatus(char *string);
 
 /* Output a string from the port. */
 void disp_outputstr(int port, char *string,
-		long usec_threshold, long usec_waited, char *name1, char *name2);
+		long usec_threshold, long usec_waited);
 
