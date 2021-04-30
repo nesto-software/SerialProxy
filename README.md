@@ -5,6 +5,9 @@ Serial Proxy for Raspberry Pi (armhf)
   <img src=".github/imgs/project_logo.png">
 </p>
 
+[![https://github.com/nesto-software/ProxySuite](https://img.shields.io/badge/part%20of-ProxySuite-blue)](https://github.com/nesto-software/ProxySuite)
+
+
 Heads Up!
 ------
 This project is currently being refactored by Nesto.   
