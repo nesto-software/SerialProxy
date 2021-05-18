@@ -30,7 +30,6 @@ int main() {
 
     gg_runtime_start(handler, GG_RT_OPT_ASYNC);
 
-
     const char* baudRate = std::getenv("BAUD_RATE");
 	char* dev1 = std::getenv("DEV_1");
 	char* dev2 = std::getenv("DEV_2");
@@ -60,7 +59,6 @@ int main() {
 			baudRate);
 		::exit(1);
 	}
-	if (baud==B0) baud=B19200;
 
 	disp_init();
     port1=openport(dev1, baud, setup_port);
