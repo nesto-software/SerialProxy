@@ -22,7 +22,7 @@ Development Status
 
   <tr><th>Variant</th><th>Status</th></tr>
   <tr><td>Software</td><td align="center">:heavy_check_mark:</td></tr>
-  <tr><td>Hardware</td><td align="center">:gears:</td></tr>
+  <tr><td>Hardware</td><td align="center">:gear:</td></tr>
 
 </table>
 
