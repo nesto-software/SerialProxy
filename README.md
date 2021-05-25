@@ -46,13 +46,13 @@ Usage
 #### Software Proxy Approach
 
 ```bash
-sudo ./sersniff -i /dev/ttyUSB0 -o /dev/ttyUSB1 -z -b 19200
+sudo sersniff -i /dev/ttyUSB0 -o /dev/ttyUSB1 -z -b 19200
 ```
 
 #### Hardware Proxy Approach
 
 ```bash
-sudo ./sersniff -i /dev/ttyACM0 -s -z
+sudo sersniff -i /dev/ttyACM0 -s -z
 ```
 
 #### Alternative / Debugging
