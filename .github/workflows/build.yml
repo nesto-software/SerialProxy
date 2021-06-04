@@ -1,66 +1,24 @@
+name: Build tcpflow-gg
 on:
   push:
+    paths-ignore:
+      - '.devcontainer/**'
     branches: master
   workflow_dispatch:
-    
+
 jobs:
   build-and-package:
     name: Build nesto-serialproxy debian package
-    runs-on: ubuntu-latest
-    env:
-      TOOLCHAIN: arm-unknown-linux-gnueabi
-      STAGING_DIR: /usr/raspberry-build/staging
-
+    runs-on: 'ubuntu-20.04'
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/serial-proxy-dev:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.CR_PAT }}
+    
     steps:
     - run: echo /opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin >> $GITHUB_PATH
     - uses: actions/checkout@v2
-
-    - name: Install cross-toolchain
-      run: |
-        sudo ./scripts/install-cross-toolchain-armhf.sh
-
-    - name: Prepare staging directory
-      run: |
-        sudo mkdir -p "${STAGING_DIR}"
-
-    - name: Install prerequisites for libzmq build
-      run: |
-        sudo apt-get install -y pkg-config
-
-    - name: Download libzmq
-      run: |
-        git clone https://github.com/zeromq/libzmq.git /tmp/libzmq && cd /tmp/libzmq && git checkout 92282785ed8e3a954d379a0ac0e784dc29d94746
- 
-    - name: Build libzmq
-      working-directory: /tmp/libzmq
-      run: |
-        ./autogen.sh
-        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ AR=${TOOLCHAIN}-ar STRIP=${TOOLCHAIN}-strip RANLIB=${TOOLCHAIN}-ranlib ./configure --host=arm-unknown-linux-gnueabi --exec-prefix=$STAGING_DIR/usr/local --prefix=${STAGING_DIR}/usr/local --disable-curve-keygen 
-        make
-        sudo PATH=$PATH:/opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin make install
-
-    - name: Download cppzmq
-      run: |
-        git clone https://github.com/zeromq/cppzmq.git /tmp/cppzmq && cd /tmp/cppzmq && git checkout c591113bb7975e1be6fa6b0c758cacfe0411c66e
-
-    - name: Install cmake v3.19.4
-      run: |
-        wget https://github.com/Kitware/CMake/releases/download/v3.19.4/cmake-3.19.4-Linux-x86_64.sh -P /tmp/
-        chmod +x /tmp/cmake-3.19.4-Linux-x86_64.sh && mkdir /tmp/cmake && /tmp/cmake-3.19.4-Linux-x86_64.sh --skip-license --prefix=/tmp/cmake
-
-    - name: Build cppzmq
-      working-directory: /tmp/cppzmq
-      run: |
-        mkdir build
-        cd ./build
-        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig /tmp/cmake/bin/cmake .. "-DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/config/crossbuild.cmake.tc" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
-        CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ make
-        sudo PATH=$PATH:/opt/crosstool-ng/x-tools/${TOOLCHAIN}/bin DESTDIR=${STAGING_DIR} make -j4 install
-
-    - name: Install aws-greengrass-core-sdk-c
-      run: |
-        git clone https://github.com/aws/aws-greengrass-core-sdk-c.git /tmp/aws-sdk
-        cd /tmp/aws-sdk/aws-greengrass-core-sdk-c && git checkout a71613711438b48588e177f86ab322dd3992e780 && mkdir -p build && cd build && CC=${TOOLCHAIN}-gcc CXX=${TOOLCHAIN}-g++ cmake .. && cmake --build . && sudo make install
 
     - name: Build the cli utility
       run: |
