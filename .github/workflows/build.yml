@@ -1,4 +1,4 @@
-name: Build tcpflow-gg
+name: Build
 on:
   push:
     paths-ignore:
