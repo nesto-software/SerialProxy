@@ -1,4 +1,4 @@
-name: Build tcpflow-gg
+name: build-binaries
 on:
   push:
     paths-ignore:
